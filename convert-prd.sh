@@ -16,18 +16,21 @@ if [ ! -f "$PRD_FILE" ]; then
   exit 1
 fi
 
-# Get the directory where this script lives
+# Get the directory where this script lives and where the output should go
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PRD_DIR="$(cd "$(dirname "$PRD_FILE")" && pwd)"
+OUTPUT_FILE="$PRD_DIR/prd.json"
 
 # Read the PRD and example format
 PRD_CONTENT=$(cat "$PRD_FILE")
 EXAMPLE_FORMAT=$(cat "$SCRIPT_DIR/prd.json.example")
 
 echo "Converting $PRD_FILE to prd.json..."
+echo "Output: $OUTPUT_FILE"
 echo ""
 
 # Call Claude with the covert_to_prd skill, passing both the PRD and example
-claude --permission-mode acceptEdits --model sonnet \
+OUTPUT=$(claude --permission-mode acceptEdits --model sonnet \
   --print "Convert this PRD to ralph's prd.json format.
 
 ## PRD to Convert:
@@ -49,4 +52,17 @@ Follow the rules from the covert_to_prd skill:
 - Keep stories small (completable in one iteration)
 - Order by dependencies (schema → backend → UI)
 
-Output ONLY the valid JSON in a code block, nothing else."
+Output ONLY the valid JSON in a code block, nothing else." 2>&1)
+
+# Extract JSON from the output (between ```json and ```)
+JSON=$(echo "$OUTPUT" | sed -n '/```json/,/```/p' | sed '1d;$d')
+
+if [ -z "$JSON" ]; then
+  echo "Error: Failed to extract JSON from Claude output"
+  echo "Output: $OUTPUT"
+  exit 1
+fi
+
+# Save to prd.json in the original directory
+echo "$JSON" > "$OUTPUT_FILE"
+echo "✓ Conversion complete: $OUTPUT_FILE"
