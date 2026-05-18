@@ -17,20 +17,10 @@ This creates `prd.json` in your project root.
 
 Alternatively, manually create `prd.json` using the structure in `prd.json.example`.
 
-### 2. Add Project Instructions (Optional)
+### 2. (optional) Add Project Instructions (Optional)
 
 Create a `ralph.md` file in your project root with any specific instructions Ralph should follow:
 
-```markdown
-# Ralph Instructions
-
-- Use TypeScript for all code
-- Store database migrations in `db/migrations/`
-- Run `npm run test` after each story
-- Reference existing components in `src/components/`
-```
-
-Ralph will read this file and follow your project-specific conventions.
 
 ### 3. Run Ralph
 
