@@ -1,239 +1,138 @@
-# Ralph
+# Ralph - Autonomous AI Agent Loop
 
-![Ralph](ralph.webp)
+Ralph is an autonomous AI agent that executes your PRD (Product Requirements Document) story-by-story, implementing each one until all are complete.
 
-Ralph is an autonomous AI agent loop that runs AI coding tools ([Amp](https://ampcode.com) or [Claude Code](https://docs.anthropic.com/en/docs/claude-code)) repeatedly until all PRD items are complete. Each iteration is a fresh instance with clean context. Memory persists via git history, `progress.txt`, and `prd.json`.
+## Quick Start
 
-Based on [Geoffrey Huntley's Ralph pattern](https://ghuntley.com/ralph/).
+### 1. Convert Your PRD
 
-[Read my in-depth article on how I use Ralph](https://x.com/ryancarson/status/2008548371712135632)
-
-## Prerequisites
-
-- One of the following AI coding tools installed and authenticated:
-  - [Amp CLI](https://ampcode.com) (default)
-  - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (`npm install -g @anthropic-ai/claude-code`)
-- `jq` installed (`brew install jq` on macOS)
-- A git repository for your project
-
-## Setup
-
-### Option 1: Copy to your project
-
-Copy the ralph files into your project:
+If you have an existing PRD, convert it to ralph format:
 
 ```bash
-# From your project root
-mkdir -p scripts/ralph
-cp /path/to/ralph/ralph.sh scripts/ralph/
-
-# Copy the prompt template for your AI tool of choice:
-cp /path/to/ralph/prompt.md scripts/ralph/prompt.md    # For Amp
-# OR
-cp /path/to/ralph/CLAUDE.md scripts/ralph/CLAUDE.md    # For Claude Code
-
-chmod +x scripts/ralph/ralph.sh
+cd /path/to/your/project
+/path/to/ralph/convert-prd.sh /path/to/your/prd.md
 ```
 
-### Option 2: Install skills globally (Amp)
+This creates `prd.json` in your project root.
 
-Copy the skills to your Amp or Claude config for use across all projects:
+Alternatively, manually create `prd.json` using the structure in `prd.json.example`.
 
-For AMP
-```bash
-cp -r skills/prd ~/.config/amp/skills/
-cp -r skills/ralph ~/.config/amp/skills/
-```
-
-For Claude Code (manual)
-```bash
-cp -r skills/prd ~/.claude/skills/
-cp -r skills/ralph ~/.claude/skills/
-```
-
-### Option 3: Use as Claude Code Marketplace
-
-Add the Ralph marketplace to Claude Code:
+### 2. Run Ralph
 
 ```bash
-/plugin marketplace add snarktank/ralph
+cd /path/to/your/project
+/path/to/ralph/ralph.sh [--tool amp|claude] [max_iterations]
 ```
 
-Then install the skills:
+**Options:**
+- `--tool amp` — Use Amp (default)
+- `--tool claude` — Use Claude Code (with Sonnet model)
+- `max_iterations` — Max loops (default: 10)
 
+**Examples:**
 ```bash
-/plugin install ralph-skills@ralph-marketplace
+./ralph.sh                        # Run with amp, max 10 iterations
+./ralph.sh --tool claude 20       # Run with claude, max 20 iterations
+./ralph.sh 5                      # Run with amp, max 5 iterations
 ```
 
-Available skills after installation:
-- `/prd` - Generate Product Requirements Documents
-- `/ralph` - Convert PRDs to prd.json format
+Ralph will:
+1. Read your `prd.json`
+2. Pick the highest-priority incomplete story (`passes: false`)
+3. Implement it
+4. Run quality checks (typecheck, lint, test)
+5. Commit changes if all checks pass
+6. Update the PRD status
+7. Log progress to `progress.txt`
+8. Loop until all stories are complete or max iterations reached
 
-Skills are automatically invoked when you ask Claude to:
-- "create a prd", "write prd for", "plan this feature"
-- "convert this prd", "turn into ralph format", "create prd.json"
+## PRD Format
 
-### Configure Amp auto-handoff (recommended)
-
-Add to `~/.config/amp/settings.json`:
+Ralph expects `prd.json` in this structure:
 
 ```json
 {
-  "amp.experimental.autoHandoff": { "context": 90 }
+  "project": "Project Name",
+  "branchName": "ralph/feature-name",
+  "description": "Feature description",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Story title",
+      "description": "As a user, I want...",
+      "acceptanceCriteria": [
+        "Criterion 1",
+        "Criterion 2",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    }
+  ]
 }
 ```
 
-This enables automatic handoff when context fills up, allowing Ralph to handle large stories that exceed a single context window.
+See `prd.json.example` for a complete example.
 
-## Workflow
+## Conversion Rules
 
-### 1. Create a PRD
+When converting a PRD to ralph format:
 
-Use the PRD skill to generate a detailed requirements document:
+- **Story Size**: Each story must be completable in one iteration (one LLM context window)
+- **Dependencies First**: Order stories by dependency (schema → backend → UI)
+- **Verifiable Criteria**: Acceptance criteria must be checkable, not vague
+- **Always Include**: "Typecheck passes" in every story's criteria
+- **UI Stories**: Add "Verify in browser using dev-browser skill" to frontend changes
 
-```
-Load the prd skill and create a PRD for [your feature description]
-```
+For detailed conversion guidance, see `covert_to_prd.md`.
 
-Answer the clarifying questions. The skill saves output to `tasks/prd-[feature-name].md`.
+## Files & Structure
 
-### 2. Convert PRD to Ralph format
+- **`ralph.sh`** — Main agent loop script
+- **`convert-prd.sh`** — Convert any PRD to ralph format
+- **`prompt.md`** — Instructions given to the AI agent
+- **`prd.json.example`** — Example PRD structure
+- **`covert_to_prd.md`** — Detailed conversion rules (Claude Code skill)
 
-Use the Ralph skill to convert the markdown PRD to JSON:
+## Outputs
 
-```
-Load the ralph skill and convert tasks/prd-[feature-name].md to prd.json
-```
+After running ralph:
 
-This creates `prd.json` with user stories structured for autonomous execution.
+- **`prd.json`** — Updated with `passes: true` for completed stories
+- **`progress.txt`** — Detailed log of each iteration
+- **`archive/`** — Previous run results (auto-archived when branch changes)
+- **`.last-branch`** — Tracks which branch was last executed
 
-### 3. Run Ralph
+## Understanding Progress
 
-```bash
-# Using Amp (default)
-./scripts/ralph/ralph.sh [max_iterations]
+Check `progress.txt` after each run. It includes:
 
-# Using Claude Code
-./scripts/ralph/ralph.sh --tool claude [max_iterations]
-```
+- What each story implemented
+- Which files changed
+- Learnings for future iterations (patterns, gotchas, context)
 
-Default is 10 iterations. Use `--tool amp` or `--tool claude` to select your AI coding tool.
+Ralph also consolidates codebase patterns at the top of `progress.txt` so future iterations understand the project's conventions.
 
-Ralph will:
-1. Create a feature branch (from PRD `branchName`)
-2. Pick the highest priority story where `passes: false`
-3. Implement that single story
-4. Run quality checks (typecheck, tests)
-5. Commit if checks pass
-6. Update `prd.json` to mark story as `passes: true`
-7. Append learnings to `progress.txt`
-8. Repeat until all stories pass or max iterations reached
+## Tips
 
-## Key Files
+1. **Keep stories small** — If a story takes >1 context window, it will fail. Split big features into smaller stories.
+2. **Order by dependency** — Schema changes must come before UI that uses them.
+3. **Test as you go** — Each story runs quality checks. Fix broken stories immediately.
+4. **Archive between features** — Ralph auto-archives old runs when you switch branches.
+5. **Check learnings** — Review `progress.txt` learnings before running the next feature.
 
-| File | Purpose |
-|------|---------|
-| `ralph.sh` | The bash loop that spawns fresh AI instances (supports `--tool amp` or `--tool claude`) |
-| `prompt.md` | Prompt template for Amp |
-| `CLAUDE.md` | Prompt template for Claude Code |
-| `prd.json` | User stories with `passes` status (the task list) |
-| `prd.json.example` | Example PRD format for reference |
-| `progress.txt` | Append-only learnings for future iterations |
-| `skills/prd/` | Skill for generating PRDs (works with Amp and Claude Code) |
-| `skills/ralph/` | Skill for converting PRDs to JSON (works with Amp and Claude Code) |
-| `.claude-plugin/` | Plugin manifest for Claude Code marketplace discovery |
-| `flowchart/` | Interactive visualization of how Ralph works |
+## Troubleshooting
 
-## Flowchart
+**Ralph exceeded max iterations without completing:**
+- Check `progress.txt` for which story failed
+- Verify acceptance criteria are achievable
+- Split oversized stories into smaller ones
 
-[![Ralph Flowchart](ralph-flowchart.png)](https://snarktank.github.io/ralph/)
+**Commit hooks failing:**
+- Ralph respects your project's hooks (typecheck, lint, test)
+- Fix the underlying issue rather than bypassing hooks
 
-**[View Interactive Flowchart](https://snarktank.github.io/ralph/)** - Click through to see each step with animations.
-
-The `flowchart/` directory contains the source code. To run locally:
-
-```bash
-cd flowchart
-npm install
-npm run dev
-```
-
-## Critical Concepts
-
-### Each Iteration = Fresh Context
-
-Each iteration spawns a **new AI instance** (Amp or Claude Code) with clean context. The only memory between iterations is:
-- Git history (commits from previous iterations)
-- `progress.txt` (learnings and context)
-- `prd.json` (which stories are done)
-
-### Small Tasks
-
-Each PRD item should be small enough to complete in one context window. If a task is too big, the LLM runs out of context before finishing and produces poor code.
-
-Right-sized stories:
-- Add a database column and migration
-- Add a UI component to an existing page
-- Update a server action with new logic
-- Add a filter dropdown to a list
-
-Too big (split these):
-- "Build the entire dashboard"
-- "Add authentication"
-- "Refactor the API"
-
-### AGENTS.md Updates Are Critical
-
-After each iteration, Ralph updates the relevant `AGENTS.md` files with learnings. This is key because AI coding tools automatically read these files, so future iterations (and future human developers) benefit from discovered patterns, gotchas, and conventions.
-
-Examples of what to add to AGENTS.md:
-- Patterns discovered ("this codebase uses X for Y")
-- Gotchas ("do not forget to update Z when changing W")
-- Useful context ("the settings panel is in component X")
-
-### Feedback Loops
-
-Ralph only works if there are feedback loops:
-- Typecheck catches type errors
-- Tests verify behavior
-- CI must stay green (broken code compounds across iterations)
-
-### Browser Verification for UI Stories
-
-Frontend stories must include "Verify in browser using dev-browser skill" in acceptance criteria. Ralph will use the dev-browser skill to navigate to the page, interact with the UI, and confirm changes work.
-
-### Stop Condition
-
-When all stories have `passes: true`, Ralph outputs `<promise>COMPLETE</promise>` and the loop exits.
-
-## Debugging
-
-Check current state:
-
-```bash
-# See which stories are done
-cat prd.json | jq '.userStories[] | {id, title, passes}'
-
-# See learnings from previous iterations
-cat progress.txt
-
-# Check git history
-git log --oneline -10
-```
-
-## Customizing the Prompt
-
-After copying `prompt.md` (for Amp) or `CLAUDE.md` (for Claude Code) to your project, customize it for your project:
-- Add project-specific quality check commands
-- Include codebase conventions
-- Add common gotchas for your stack
-
-## Archiving
-
-Ralph automatically archives previous runs when you start a new feature (different `branchName`). Archives are saved to `archive/YYYY-MM-DD-feature-name/`.
-
-## References
-
-- [Geoffrey Huntley's Ralph article](https://ghuntley.com/ralph/)
-- [Amp documentation](https://ampcode.com/manual)
-- [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code)
+**Branch mismatch:**
+- Ralph auto-archives old runs if `branchName` changes
+- Check `archive/` for previous run files
