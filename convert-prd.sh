@@ -16,10 +16,10 @@ if [ ! -f "$PRD_FILE" ]; then
   exit 1
 fi
 
-# Get the directory where this script lives and where the output should go
+# Get the directory where this script lives
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PRD_DIR="$(cd "$(dirname "$PRD_FILE")" && pwd)"
-OUTPUT_FILE="$PRD_DIR/prd.json"
+# Output goes to current directory (project root)
+OUTPUT_FILE="prd.json"
 
 # Read the PRD and example format
 PRD_CONTENT=$(cat "$PRD_FILE")
