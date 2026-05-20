@@ -4,7 +4,7 @@ Ralph is an autonomous AI agent that executes your PRD (Product Requirements Doc
 
 ## Requirements
 
-- [Amp](https://ampcode.com) or [Claude Code](https://claude.ai/code) installed and authenticated
+- [Amp](https://ampcode.com), [Claude Code](https://claude.ai/code), or [Pi](https://pi.dev) installed and authenticated
 - `jq` installed (`brew install jq`)
 
 ## Setting up a new project
@@ -30,18 +30,20 @@ Alternatively, create `prd.json` manually using the structure in `prd.json.examp
 
 ```bash
 cd /path/to/your/project
-/path/to/ralph/ralph.sh [--tool amp|claude] [max_iterations]
+/path/to/ralph/ralph.sh [--tool amp|claude|pi] [max_iterations]
 ```
 
 **Options:**
 - `--tool amp` — Use Amp (default)
 - `--tool claude` — Use Claude Code (Sonnet)
+- `--tool pi` — Use Pi
 - `max_iterations` — Max loops before stopping (default: 10)
 
 **Examples:**
 ```bash
 /path/to/ralph/ralph.sh                    # Amp, max 10 iterations
 /path/to/ralph/ralph.sh --tool claude 20   # Claude, max 20 iterations
+/path/to/ralph/ralph.sh --tool pi 20       # Pi, max 20 iterations
 /path/to/ralph/ralph.sh 5                  # Amp, max 5 iterations
 ```
 
@@ -68,7 +70,7 @@ Ralph runs Claude with `--permission-mode bypassPermissions` — all tool calls 
 
 **Only run Ralph in a sandboxed environment** such as GitHub Codespaces or a Docker container. Do not run it with `--tool claude` directly on your laptop — it has unrestricted access to your filesystem and shell.
 
-Amp (`--tool amp`) uses its own `--dangerously-allow-all` flag for the same reason.
+Amp (`--tool amp`) uses its own `--dangerously-allow-all` flag for the same reason. Pi (`--tool pi`) runs with `--print` in non-interactive mode — it too has unrestricted filesystem and shell access, so the same sandboxing advice applies.
 
 ## Tips
 
