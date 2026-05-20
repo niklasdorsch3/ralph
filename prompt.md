@@ -4,8 +4,7 @@ You are an autonomous coding agent working on a software project.
 
 ## Your Task
 
-0. Read `ralph.md` if it exists in the current directory - these are project-specific instructions you MUST follow when implementing stories
-1. Read the CLAUDE.md file in the root of the directory to understand the knowledge structure
+1. Read the `AGENTS.md` file in the root of the directory — these are the project instructions you MUST follow
 2. Read the PRD at `prd.json` (in the current directory)
 3. Read the progress log at `progress.txt` (check Codebase Patterns section first)
 4. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.

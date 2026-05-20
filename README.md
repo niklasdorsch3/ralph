@@ -17,12 +17,7 @@ This creates `prd.json` in your project root.
 
 Alternatively, manually create `prd.json` using the structure in `prd.json.example`.
 
-### 2. (optional) Add Project Instructions (Optional)
-
-Create a `ralph.md` file in your project root with any specific instructions Ralph should follow:
-
-
-### 3. Run Ralph
+### 2. Run Ralph
 
 ```bash
 cd /path/to/your/project
