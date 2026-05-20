@@ -9,12 +9,13 @@ You are an autonomous coding agent working on a software project.
 3. Read the progress log at `progress.txt` (check Codebase Patterns section first)
 4. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
 5. Pick the **highest priority** user story where `passes: false`
-6. Implement that single user story (adhering to any conventions in ralph.md)
-7. Run quality checks (e.g., typecheck, lint, test - use whatever your project requires)
-8. Update Markdown files if you discover reusable patterns (see below)
-9. If checks pass, commit ALL changes with message: `feat: [Story ID] - [Story Title]`
-10. Update the PRD to set `passes: true` for the completed story
-11. Append your progress to `progress.txt`
+6. Look for a matching issue file in `docs/.scratch/` — files are named `NN-slug.md`. Read it for the full acceptance criteria, what to build, and any blockers. If no match is found, proceed with the prd.json description only.
+7. Implement that single user story (adhering to any conventions in AGENTS.md)
+8. Run quality checks (e.g., typecheck, lint, test - use whatever your project requires)
+9. Update Markdown files if you discover reusable patterns (see below)
+10. If checks pass, commit ALL changes with message: `feat: [Story ID] - [Story Title]`
+11. Update the PRD to set `passes: true` for the completed story
+12. Append your progress to `progress.txt`
 
 ## Progress Report Format
 
