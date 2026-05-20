@@ -2,22 +2,31 @@
 
 Ralph is an autonomous AI agent that executes your PRD (Product Requirements Document) story-by-story, implementing each one until all are complete.
 
-## Quick Start
+## Requirements
 
-### 1. Convert Your PRD
+- [Amp](https://ampcode.com) or [Claude Code](https://claude.ai/code) installed and authenticated
+- `jq` installed (`brew install jq`)
 
-If you have an existing PRD, convert it to ralph format:
+## Setting up a new project
+
+### 1. Make sure your project has an `AGENTS.md`
+
+Ralph reads `AGENTS.md` at the project root for project-specific instructions — testing requirements, git workflow, documentation rules, architecture guidance. If your project doesn't have one, create it before running Ralph.
+
+### 2. Convert your PRD to `prd.json`
+
+Ralph expects a `prd.json` in the project root. If you have a markdown PRD, convert it:
 
 ```bash
 cd /path/to/your/project
 /path/to/ralph/convert-prd.sh /path/to/your/prd.md
 ```
 
-This creates `prd.json` in your project root.
+This uses Claude to parse your PRD and output a `prd.json`. Check the result before running Ralph — make sure stories are in dependency order and acceptance criteria are specific.
 
-Alternatively, manually create `prd.json` using the structure in `prd.json.example`.
+Alternatively, create `prd.json` manually using the structure in `prd.json.example`.
 
-### 2. Run Ralph
+### 3. Run Ralph
 
 ```bash
 cd /path/to/your/project
@@ -26,35 +35,36 @@ cd /path/to/your/project
 
 **Options:**
 - `--tool amp` — Use Amp (default)
-- `--tool claude` — Use Claude Code (with Sonnet model)
-- `max_iterations` — Max loops (default: 10)
+- `--tool claude` — Use Claude Code (Sonnet)
+- `max_iterations` — Max loops before stopping (default: 10)
 
 **Examples:**
 ```bash
-./ralph.sh                        # Run with amp, max 10 iterations
-./ralph.sh --tool claude 20       # Run with claude, max 20 iterations
-./ralph.sh 5                      # Run with amp, max 5 iterations
+/path/to/ralph/ralph.sh                    # Amp, max 10 iterations
+/path/to/ralph/ralph.sh --tool claude 20   # Claude, max 20 iterations
+/path/to/ralph/ralph.sh 5                  # Amp, max 5 iterations
 ```
 
-Ralph will:
-1. Read your `prd.json`
-2. Pick the highest-priority incomplete story (`passes: false`)
-3. Implement it
-4. Run quality checks (typecheck, lint, test)
-5. Commit changes if all checks pass
-6. Update the PRD status
-7. Log progress to `progress.txt`
-8. Loop until all stories are complete or max iterations reached
+### 4. Monitor progress
 
+Ralph logs every iteration to `progress.txt` in your project root. Check it to see what was implemented, which files changed, and any patterns discovered. Codebase patterns are consolidated at the top of the file so future iterations learn from earlier ones.
 
-## Understanding Progress
+## How Ralph works
 
-Check `progress.txt` after each run. It includes:
+Each iteration Ralph will:
+1. Read `AGENTS.md` for project instructions
+2. Read `prd.json` and `progress.txt`
+3. Pick the highest-priority incomplete story (`passes: false`)
+4. Implement it
+5. Run quality checks (typecheck, lint, test)
+6. Commit all changes if checks pass
+7. Mark the story `passes: true` in `prd.json`
+8. Append learnings to `progress.txt`
+9. Loop — or exit if all stories are complete
 
-- What each story implemented
-- Which files changed
-- Learnings for future iterations (patterns, gotchas, context)
+## Tips
 
-Ralph also consolidates codebase patterns at the top of `progress.txt` so future iterations understand the project's conventions.
-
-
+- **Keep stories small.** One story per iteration. If a story takes more than one iteration to implement, split it.
+- **Dependency order matters.** Make sure schema/foundation stories come before the stories that depend on them.
+- **Check `progress.txt` if something goes wrong.** It will tell you exactly what Ralph tried and why it stopped.
+- **Re-run after failures.** If Ralph hits max iterations without finishing, just run it again — it picks up where it left off.
