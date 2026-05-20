@@ -67,9 +67,9 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   if [[ "$TOOL" == "amp" ]]; then
     OUTPUT=$(cat "$SCRIPT_DIR/prompt.md" | amp --dangerously-allow-all 2>&1 | tee /dev/stderr) || true
   else
-    # Claude Code: acceptEdits mode with broad tool allowlist for autonomous operation
+    # Claude Code: acceptEdits mode with all built-in tools enabled
     OUTPUT=$(claude --permission-mode acceptEdits \
-      --allowedTools "Bash,Read,Write,Edit,MultiEdit,Glob,Grep,LS,WebFetch,WebSearch,TodoRead,TodoWrite,NotebookRead,NotebookEdit" \
+      --tools default \
       --model sonnet --print < "$SCRIPT_DIR/prompt.md" 2>&1 | tee /dev/stderr) || true
   fi
   
