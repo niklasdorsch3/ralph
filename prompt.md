@@ -9,7 +9,7 @@ You are an autonomous coding agent working on a software project.
 3. Read the progress log at `progress.txt` (check Codebase Patterns section first)
 4. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
 5. Pick the **highest priority** user story where `passes: false`
-6. Look for a matching issue file in `docs/.scratch/` — files are named `NN-slug.md`. Read it for the full acceptance criteria, what to build, and any blockers. If no match is found, proceed with the prd.json description only.
+6. If the selected story has a `doc` field, read that file for the full acceptance criteria, what to build, and any blockers. If no `doc` field exists, proceed with the prd.json description only.
 7. Implement that single user story (adhering to any conventions in AGENTS.md)
 8. Run quality checks (e.g., typecheck, lint, test - use whatever your project requires)
 9. Update Markdown files if you discover reusable patterns (see below)
