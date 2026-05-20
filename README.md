@@ -62,6 +62,14 @@ Each iteration Ralph will:
 8. Append learnings to `progress.txt`
 9. Loop — or exit if all stories are complete
 
+## Permissions
+
+Ralph runs Claude with `--permission-mode bypassPermissions` — all tool calls (file writes, shell commands, web fetch) are auto-approved with no prompts. This is required for the autonomous loop to work in `--print` mode.
+
+**Only run Ralph in a sandboxed environment** such as GitHub Codespaces or a Docker container. Do not run it with `--tool claude` directly on your laptop — it has unrestricted access to your filesystem and shell.
+
+Amp (`--tool amp`) uses its own `--dangerously-allow-all` flag for the same reason.
+
 ## Tips
 
 - **Keep stories small.** One story per iteration. If a story takes more than one iteration to implement, split it.
