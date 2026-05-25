@@ -13,20 +13,13 @@ Ralph is an autonomous AI agent that executes your PRD (Product Requirements Doc
 
 Ralph reads `AGENTS.md` at the project root for project-specific instructions — testing requirements, git workflow, documentation rules, architecture guidance. If your project doesn't have one, create it before running Ralph.
 
-### 2. Convert your PRD to `prd.json`
+### 2. Write your user stories as markdown files
 
-Ralph expects a `prd.json` in the project root. If you have a markdown PRD, convert it:
-
-```bash
-cd /path/to/your/project
-/path/to/ralph/convert-prd.sh /path/to/your/prd.md
-```
-
-This uses Claude to parse your PRD and output a `prd.json`. Check the result before running Ralph — make sure stories are in dependency order and acceptance criteria are specific.
-
-Alternatively, create `prd.json` manually using the structure in `prd.json.example`.
+Write each user story as its own markdown file (e.g. in `docs/`). Ralph will generate `prd.json` automatically when you run it.
 
 ### 3. Run Ralph
+
+When you run Ralph, it will first generate `prd.json` from your story files using Claude, display the result, and ask you to confirm before starting the loop. Type `yes` to proceed or `no` to abort.
 
 ```bash
 cd /path/to/your/project
@@ -49,13 +42,17 @@ cd /path/to/your/project
 
 ### 4. Monitor progress
 
-Ralph logs every iteration to `progress.txt` in your project root. Check it to see what was implemented, which files changed, and any patterns discovered. Codebase patterns are consolidated at the top of the file so future iterations learn from earlier ones.
+Ralph logs every iteration to `progress.txt` in the same directory as `prd.json` (project root or `docs/`). Check it to see what was implemented, which files changed, and any patterns discovered. Codebase patterns are consolidated at the top of the file so future iterations learn from earlier ones.
 
 ## How Ralph works
 
+On startup, Ralph will:
+1. Generate `prd.json` from your markdown story files (using Claude)
+2. Display the result and ask for confirmation — type `yes` to proceed, `no` to abort
+
 Each iteration Ralph will:
 1. Read `AGENTS.md` for project instructions
-2. Read `prd.json` and `progress.txt`
+2. Find and read `prd.json` (project root or `docs/`) and `progress.txt` (same directory)
 3. Pick the highest-priority incomplete story (`passes: false`)
 4. Implement it
 5. Run quality checks (typecheck, lint, test)

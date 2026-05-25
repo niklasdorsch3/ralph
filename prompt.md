@@ -5,8 +5,8 @@ You are an autonomous coding agent working on a software project.
 ## Your Task
 
 1. Read the `AGENTS.md` file in the root of the directory — these are the project instructions you MUST follow
-2. Read the PRD at `prd.json` (in the current directory)
-3. Read the progress log at `progress.txt` (check Codebase Patterns section first)
+2. Read the PRD: look for `prd.json` in the project root first, then `docs/prd.json`
+3. Read the progress log `progress.txt` from the same directory as `prd.json` (check Codebase Patterns section first)
 4. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
 5. Pick the **highest priority** user story where `passes: false`
 6. If the selected story has a `doc` field, read that file for the full acceptance criteria, what to build, and any blockers. If no `doc` field exists, proceed with the prd.json description only.
@@ -14,8 +14,8 @@ You are an autonomous coding agent working on a software project.
 8. Run quality checks (e.g., typecheck, lint, test - use whatever your project requires)
 9. Update Markdown files if you discover reusable patterns (see below)
 10. If checks pass, commit ALL changes with message: `feat: [Story ID] - [Story Title]`
-11. Update the PRD to set `passes: true` for the completed story
-12. Append your progress to `progress.txt`
+11. Update the PRD (`prd.json` wherever you found it) to set `passes: true` for the completed story
+12. Append your progress to `progress.txt` (same directory as `prd.json`)
 
 ## Progress Report Format
 
