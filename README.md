@@ -1,25 +1,38 @@
-# Ralph - Autonomous AI Agent Loop
+# Ralph — Autonomous AI Agent Loop
 
-Ralph is an autonomous AI agent that executes your PRD (Product Requirements Document) story-by-story, implementing each one until all are complete.
+Ralph implements your user stories one by one, autonomously, until they are all done. You write the stories as markdown files. Ralph reads them, plans the work, codes it, runs quality checks, commits, and moves to the next story.
+
+---
 
 ## Requirements
 
 - [Amp](https://ampcode.com), [Claude Code](https://claude.ai/code), or [Pi](https://pi.dev) installed and authenticated
 - `jq` installed (`brew install jq`)
 
-## Setting up a new project
+---
 
-### 1. Make sure your project has an `AGENTS.md`
+## How to set up a project
 
-Ralph reads `AGENTS.md` at the project root for project-specific instructions — testing requirements, git workflow, documentation rules, architecture guidance. If your project doesn't have one, create it before running Ralph.
+### 1. Add an `AGENTS.md` to your project root
 
-### 2. Write your user stories as markdown files
+Ralph reads `AGENTS.md` at the start of every iteration. Put your project-specific rules here: testing requirements, git workflow, architecture decisions, naming conventions. If your project doesn't have one, create it before running Ralph.
 
-Write each user story as its own markdown file (e.g. in `docs/`). Ralph will generate `prd.json` automatically when you run it.
+### 2. Write your user stories as individual markdown files
+
+Each story gets its own file. Put them wherever makes sense — `docs/`, `docs/.scratch/`, etc. Write acceptance criteria that are concrete and verifiable, not vague.
+
+**Good criteria:**
+- "Add `status` column to tasks table with default `pending`"
+- "Filter dropdown shows: All, Active, Completed"
+- "Typecheck passes"
+
+**Bad criteria:**
+- "Works correctly"
+- "Good UX"
+
+Keep stories small — each one must be completable in a single agent context window. If you can't describe the change in 2–3 sentences, split it.
 
 ### 3. Run Ralph
-
-When you run Ralph, it will first generate `prd.json` from your story files using Claude, display the result, and ask you to confirm before starting the loop. Type `yes` to proceed or `no` to abort.
 
 ```bash
 cd /path/to/your/project
@@ -27,51 +40,90 @@ cd /path/to/your/project
 ```
 
 **Options:**
-- `--tool amp` — Use Amp (default)
-- `--tool claude` — Use Claude Code (Sonnet)
+- `--tool claude` — Use Claude Code (default)
+- `--tool amp` — Use Amp
 - `--tool pi` — Use Pi
 - `max_iterations` — Max loops before stopping (default: 10)
 
 **Examples:**
 ```bash
-/path/to/ralph/ralph.sh                    # Amp, max 10 iterations
-/path/to/ralph/ralph.sh --tool claude 20   # Claude, max 20 iterations
-/path/to/ralph/ralph.sh --tool pi 20       # Pi, max 20 iterations
-/path/to/ralph/ralph.sh 5                  # Amp, max 5 iterations
+/path/to/ralph/ralph.sh                    # Claude, 10 iterations
+/path/to/ralph/ralph.sh --tool amp 20      # Amp, 20 iterations
+/path/to/ralph/ralph.sh 5                  # Claude, 5 iterations
 ```
 
-### 4. Monitor progress
+---
 
-Ralph logs every iteration to `progress.txt` in the same directory as `prd.json` (project root or `docs/`). Check it to see what was implemented, which files changed, and any patterns discovered. Codebase patterns are consolidated at the top of the file so future iterations learn from earlier ones.
+## What happens when you run Ralph
 
-## How Ralph works
+### Phase 1 — Setup (runs once)
 
-On startup, Ralph will:
-1. Generate `prd.json` from your markdown story files (using Claude)
-2. Display the result and ask for confirmation — type `yes` to proceed, `no` to abort
+Ralph uses Claude to read your story markdown files and generate a `prd.json` that it will use to track progress. Each story gets an entry with a `doc` field pointing back to its source file.
 
-Each iteration Ralph will:
-1. Read `AGENTS.md` for project instructions
-2. Find and read `prd.json` (project root or `docs/`) and `progress.txt` (same directory)
-3. Pick the highest-priority incomplete story (`passes: false`)
-4. Implement it
-5. Run quality checks (typecheck, lint, test)
-6. Commit all changes if checks pass
-7. Mark the story `passes: true` in `prd.json`
-8. Append learnings to `progress.txt`
-9. Loop — or exit if all stories are complete
+Ralph writes `prd.json` to `docs/prd.json` if a `docs/` directory exists, otherwise to the project root. `progress.txt` is always written to the same directory as `prd.json`.
 
-## Permissions
+After generating, Ralph prints the full `prd.json` and asks:
 
-Ralph runs Claude with `--permission-mode bypassPermissions` — all tool calls (file writes, shell commands, web fetch) are auto-approved with no prompts. This is required for the autonomous loop to work in `--print` mode.
+```
+Can you confirm the structure about to run Ralph continuously? Make sure everything looks good? (yes/no):
+```
 
-**Only run Ralph in a sandboxed environment** such as GitHub Codespaces or a Docker container. Do not run it with `--tool claude` directly on your laptop — it has unrestricted access to your filesystem and shell.
+Review the story list, priority order, and branch name. Type `yes` to proceed or `no` to abort with no changes.
 
-Amp (`--tool amp`) uses its own `--dangerously-allow-all` flag for the same reason. Pi (`--tool pi`) runs with `--print` in non-interactive mode — it too has unrestricted filesystem and shell access, so the same sandboxing advice applies.
+### Phase 2 — The loop
+
+Once you confirm, Ralph runs up to `max_iterations` loops. Each iteration:
+
+1. Reads your last 5 git commits for context
+2. Sends that context + the agent instructions to the tool you chose
+3. The agent:
+   - Reads `AGENTS.md`
+   - Reads `prd.json` and `progress.txt`
+   - Checks out the branch from `prd.json`'s `branchName`
+   - Picks the highest-priority story where `passes: false`
+   - Reads the story's markdown file for full acceptance criteria
+   - Implements the story
+   - Runs quality checks (typecheck, lint, tests)
+   - Commits all changes
+   - Sets `passes: true` on the story in `prd.json`
+   - Appends a progress entry to `progress.txt`
+4. If all stories are complete, the agent signals `COMPLETE` and Ralph exits
+5. Otherwise, Ralph starts the next iteration
+
+If Ralph hits `max_iterations` without finishing, it exits with an error. Just run it again — it picks up where it left off.
+
+---
+
+## Files Ralph uses
+
+| File | What it is |
+|------|-----------|
+| `AGENTS.md` | Your project rules. Ralph reads this every iteration. You write and maintain it. |
+| `docs/*.md` (or similar) | Your individual user story files. You write these. Ralph reads them. |
+| `prd.json` | Generated by Ralph on startup from your story files. Tracks which stories are done. |
+| `progress.txt` | Append-only log written by the agent each iteration. Accumulates patterns and learnings. |
+| `archive/` | Previous `prd.json` and `progress.txt` files from completed feature runs, archived automatically. |
+
+---
+
+## Permissions and safety
+
+Ralph runs agents with unrestricted file and shell access:
+
+- **Amp**: `--dangerously-allow-all`
+- **Claude Code**: `--permission-mode bypassPermissions`
+- **Pi**: `--print` (non-interactive, full access)
+
+The same tool and permission level is used for both the setup step (generating `prd.json`) and the main loop.
+
+**Only run Ralph in a sandboxed environment** — GitHub Codespaces, a Docker container, or a dedicated VM. Do not run it on your laptop with important files or credentials accessible.
+
+---
 
 ## Tips
 
-- **Keep stories small.** One story per iteration. If a story takes more than one iteration to implement, split it.
-- **Dependency order matters.** Make sure schema/foundation stories come before the stories that depend on them.
-- **Check `progress.txt` if something goes wrong.** It will tell you exactly what Ralph tried and why it stopped.
-- **Re-run after failures.** If Ralph hits max iterations without finishing, just run it again — it picks up where it left off.
+- **Keep stories small.** One story per iteration. Split anything that can't be described in 2–3 sentences.
+- **Order matters.** Schema/database stories before backend, backend before UI. The agent works in priority order.
+- **Check `progress.txt` if something goes wrong.** It records exactly what was attempted and why it stopped.
+- **Re-run after hitting max iterations.** Ralph picks up from wherever `passes: false` stories remain.
+- **Update `AGENTS.md` if the agent keeps making the same mistake.** That's the right place to add project-specific constraints.

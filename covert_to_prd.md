@@ -12,13 +12,16 @@ Generates `prd.json` from individual markdown user story files already written i
 
 ## The Job
 
-1. Find the markdown user story files in this project (look in `docs/`, `docs/.scratch/`, `prd.json`, or wherever the documentation in `AGENTS.md` points you)
-2. Read each file — treat each file as one user story
-3. Confirm that the prd is not yet implemented, maybe and exisiting `prd.json` can help.
-4. Generate or append to `prd.json` with a `doc` field on each entry pointing back to the source markdown file
-5. Follow all the rules below
+1. Find the markdown user story files in this project (look in `docs/`, `docs/.scratch/`, or wherever `AGENTS.md` points you)
+2. Check if `prd.json` already exists (at project root or in `docs/`)
+3. If `prd.json` exists, read it and identify which story files are already tracked (by their `doc` field) — **do not recreate or overwrite those entries**
+4. For any story markdown file that is NOT yet in `prd.json`, add a new entry with a `doc` field pointing to that file
+5. If `prd.json` does not exist at all, generate it fresh from all found story files
+6. Follow all the rules below
 
 Ralph will read those markdown files at runtime for the full acceptance criteria. Keep story entries in `prd.json` lean — the detail lives in the markdown.
+
+**Never remove or modify existing entries**, especially ones where `passes: true`. Only append missing stories.
 
 ---
 
@@ -112,14 +115,15 @@ Always include `"Typecheck passes"`. For UI stories also include `"Verify in bro
 
 ## Archiving Previous Runs
 
-**Before writing a new prd.json, check if there is an existing one from a different feature:**
+Only archive when starting a completely different feature (different `branchName`):
 
 1. Read the current `prd.json` if it exists
-2. Check if `branchName` differs from the new feature's branch name
-3. If different AND `progress.txt` has content beyond the header:
+2. If the new stories belong to the same feature (same branch), **do not archive** — just append missing entries
+3. If the new stories belong to a different feature (different `branchName`) AND `progress.txt` has content beyond the header:
    - Create archive folder: `archive/YYYY-MM-DD-feature-name/`
    - Copy current `prd.json` and `progress.txt` to archive
    - Reset `progress.txt` with fresh header
+   - Then generate `prd.json` fresh for the new feature
 
 ---
 

@@ -5,7 +5,7 @@
 set -e
 
 # Parse arguments
-TOOL="amp"  # Default to amp for backwards compatibility
+TOOL="claude"  # Default tool
 MAX_ITERATIONS=10
 
 while [[ $# -gt 0 ]]; do
@@ -42,10 +42,13 @@ LAST_BRANCH_FILE="$PROJECT_DIR/.last-branch"
 # Step 1: Generate prd.json from markdown story files
 echo "Generating prd.json from story files..."
 echo ""
-claude --permission-mode acceptEdits --model sonnet --print < "$SCRIPT_DIR/covert_to_prd.md" 2>&1 || {
-  echo "Error: Failed to generate prd.json"
-  exit 1
-}
+if [[ "$TOOL" == "amp" ]]; then
+  cat "$SCRIPT_DIR/covert_to_prd.md" | amp --dangerously-allow-all 2>&1 || { echo "Error: Failed to generate prd.json"; exit 1; }
+elif [[ "$TOOL" == "claude" ]]; then
+  claude --permission-mode acceptEdits --model sonnet --print < "$SCRIPT_DIR/covert_to_prd.md" 2>&1 || { echo "Error: Failed to generate prd.json"; exit 1; }
+else
+  pi --print < "$SCRIPT_DIR/covert_to_prd.md" 2>&1 || { echo "Error: Failed to generate prd.json"; exit 1; }
+fi
 
 # Auto-discover prd.json after generation: check project root, then docs/
 if [ -f "$PROJECT_DIR/prd.json" ]; then
